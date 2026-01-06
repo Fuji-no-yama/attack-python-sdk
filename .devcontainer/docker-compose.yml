@@ -11,4 +11,5 @@ services:
       UV_LINK_MODE: copy
     volumes:
       - ..:/workspace
+      - ${HOME}/.config/gh:/root/.config/gh
     command: sleep infinity

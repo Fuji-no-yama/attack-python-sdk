@@ -1,8 +1,9 @@
 # added content
 .venv
 tmp/*
-uv.lock
 .DS_Store
+.env.dev
+data_for_dev/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

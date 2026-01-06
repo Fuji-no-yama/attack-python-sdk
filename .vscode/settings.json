@@ -17,17 +17,5 @@
         "**/__pycache__": true,
         "**/*.pyc": true,
     },
-    "mcp": {
-        "servers": {
-            "MCP_DOCKER": {
-                "command": "docker",
-                "args": [
-                "mcp",
-                "gateway",
-                "run"
-                ],
-                "type": "stdio"
-            }
-        }
-    }
+    "python.languageServer": "None"
 }
