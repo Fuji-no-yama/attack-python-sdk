@@ -1,5 +1,6 @@
-import re
 from typing import Literal
+
+from .reference import AttackExternalReference, AttackInternalReference
 
 
 class AttackAbstractMitigation:  # 1つの抽象緩和策を表すクラス(具体緩和策を保有)
@@ -9,29 +10,24 @@ class AttackAbstractMitigation:  # 1つの抽象緩和策を表すクラス(具�
         description: str,
         domain: Literal["enterprise", "mobile", "ics"],
         concrete_mitigation_list: list["AttackConcreteMitigation"],
+        reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.id: str = mitigation_id
         self.domain: Literal["enterprise", "mobile", "ics"] = domain
-        self.description: str = self.clean_description(description)  # リンク系統を清掃する
+        self.description: str = description  # リンク系統を清掃する
         self.concrete_mitigation_list: list[AttackConcreteMitigation] = concrete_mitigation_list
-
-    def clean_description(self, desc: str) -> str:
-        pattern1 = r"\(https?://[^\s]+\)"  # MarkdownのURLを削除
-        pattern2 = r"\(Citation:.*?\)"  # Markdownの引用リンクを削除
-        pattern3 = r"<code>"
-        pattern4 = r"</code>"
-        return re.sub(rf"{pattern1}|{pattern2}|{pattern3}|{pattern4}", "", desc)
+        self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list
 
 
 class AttackConcreteMitigation:  # 1つの具体緩和策を表すクラス
-    def __init__(self, abstract_mitigation_id: str, description: str, domain: Literal["enterprise", "mobile", "ics"]) -> None:
+    def __init__(
+        self,
+        abstract_mitigation_id: str,
+        description: str,
+        domain: Literal["enterprise", "mobile", "ics"],
+        reference_list: list[AttackExternalReference | AttackInternalReference],
+    ) -> None:
         self.abstract_mitigation_id: str = abstract_mitigation_id
         self.domain: Literal["enterprise", "mobile", "ics"] = domain
-        self.description: str = self.clean_description(description)  # リンク系統を清掃する
-
-    def clean_description(self, desc: str) -> str:
-        pattern1 = r"\(https?://[^\s]+\)"  # MarkdownのURLを削除
-        pattern2 = r"\(Citation:.*?\)"  # Markdownの引用リンクを削除
-        pattern3 = r"<code>"
-        pattern4 = r"</code>"
-        return re.sub(rf"{pattern1}|{pattern2}|{pattern3}|{pattern4}", "", desc)
+        self.description: str = description  # リンク系統を清掃する
+        self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list

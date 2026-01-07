@@ -15,3 +15,5 @@ if __name__ == "__main__":
     print(f"最初のテクニック説明: {first_technique.description}")
     print(f"最初のテクニックに関連するタクティック数: {len(first_technique.tactics) if first_technique.tactics else 0}")
     print(f"最初のテクニックに関連する緩和策数: {len(first_technique.mitigation_list)}")
+
+    print()
