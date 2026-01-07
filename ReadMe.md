@@ -1,111 +1,157 @@
-# Python Template Environment
+# 概要
+MITRE ATT&CK についてPythonから気軽にデータを利用できるようにすることを目的としたライブラリです。
 
-Python開発用のテンプレート環境です。Ruffを使用したコード品質管理と、基本的な依存関係管理が設定されています。
+# インストール方法
+## pipの場合
+- インストール方法: `pip install git+https://github.com/Fuji-no-yama/attack-python-sdk@1.0.0`
+- アップグレード方法: `pip install -U git+https://github.com/Fuji-no-yama/attack-python-sdk@1.0.0`
+- 削除方法: `pip uninstall attack`
 
-## 概要
+## uvの場合
+- インストール・アップグレード方法: `uv add git+https://github.com/Fuji-no-yama/attack-python-sdk --tag 1.0.0`
+- 削除方法: `uv remove attack`
 
-このテンプレートは以下を含んでいます：
-- Python 3.10以上のプロジェクト設定
-- Ruffによるリンティング・フォーマット設定
-- 基本的な依存関係管理（numpy含む）
-- VS Code用の開発環境設定
-- Dev Container対応
+# 使い方
+## インスタンスの作成方法
+基本的なインスタンスの作成方法は以下のとおりです。(versionは指定しない場合は最新のものになります)
+```python
+from attack import Attack
+attack = Attack(version="18.1")
+```
+初回実行時には自動でローカルにベクトルDBを作成します。ただし、その後にembeddingモデルを変えたい・もう一度ベクトルDBを初期化したいなどの場合には以下の方法で初期化を行えます。  
+(embedding modelはtext-embeddingのsmallとlargeを選択できます。)
+```python
+from attack import Attack
+attack = Attack(version="18.1", emb_model="text-embedding-3-small", initialize_vector=True)
+```
+## 機能一覧
 
-## セットアップ
+### ATT&CK テクニック オブジェクト
 
-### 1. 仮想環境の作成と有効化
+#### 保有情報
+- name(str) : テクニック名
+- id(str) : id名 (例 T1059.001)
+- description(str) : 記述内容(引用を番号に変換し整形済み)
+- domain(str) : ドメイン ("enterprise", "mobile", "ics"のいずれか)
+- have_parent(bool) : 親がいるかどうか(サブテクニックかどうか)
+- parent_id(str) : 親のid名 (例 T1059) (親がいない場合はNone)
+- tactics(list[AttackTactic]) : 所属するtacticオブジェクトのリスト
+- mitigation_list(list[AttackConcreteMitigation]) : テクニックに紐づく具体緩和策オブジェクトのリスト
+- reference_list(list[AttackExternalReference | AttackInternalReference]) : 引用参考資料のリスト
 
-```bash
-# 仮想環境の作成
-python -m venv .venv
-
-# 仮想環境の有効化
-source .venv/bin/activate  # macOS/Linux
-# または
-.venv\Scripts\activate     # Windows
+#### 使用例
+attackテクニックオブジェクトを順番に確認しidがT1059.001のものを取得したい場合
+```python
+for tec in attack.technique_list:
+    if tec.id == "T1059.001":
+        print("found!!")
 ```
 
-### 2. 依存関係のインストール
+### ATT&CK タクティック オブジェクト
 
-```bash
-pip install -e .
+#### 保有情報
+- name(str) : タクティック名
+- id(str) : id名 (例 TA0001)
+- description(str) : 記述内容
+- domain(str) : ドメイン ("enterprise", "mobile", "ics"のいずれか)
+- technique_list(list[AttackTechnique]) : タクティックに紐づくテクニックオブジェクトのリスト
+
+#### 使用例
+attackタクティックオブジェクトを順番に確認しidがTA0001について紐づいているテクニックのid一覧を表示したい場合
+```python
+for tac in attack.tactic_list:
+    if tac.id == "TA0001":
+        for tec in tac.technique_list:
+            print(tec.id)
 ```
 
-### 3. 開発用ツールのインストール
+### ATT&CK 緩和策 オブジェクト
 
-```bash
-pip install ruff
+#### 抽象緩和策 (AttackAbstractMitigation)
+抽象緩和策は、一般的な緩和策の概要を表すオブジェクトです。
+
+##### 保有情報
+- id(str) : id名 (例 M1013)
+- description(str) : 記述内容(引用を番号に変換し整形済み)
+- domain(str) : ドメイン ("enterprise", "mobile", "ics"のいずれか)
+- concrete_mitigation_list(list[AttackConcreteMitigation]) : この抽象緩和策に紐づく具体緩和策のリスト
+- reference_list(list[AttackExternalReference | AttackInternalReference]) : 引用参考資料のリスト
+
+#### 具体緩和策 (AttackConcreteMitigation)
+具体緩和策は、特定のテクニックに対する具体的な緩和方法を表すオブジェクトです。
+
+##### 保有情報
+- abstract_mitigation_id(str) : 紐づく抽象緩和策のid (例 M1013)
+- description(str) : テクニック固有の具体的な緩和策の記述内容(引用を番号に変換し整形済み)
+- domain(str) : ドメイン ("enterprise", "mobile", "ics"のいずれか)
+- reference_list(list[AttackExternalReference | AttackInternalReference]) : 引用参考資料のリスト
+
+#### 使用例
+attack抽象緩和策オブジェクトを順番に確認しidがM1013について紐づいている具体緩和策の記述内容を表示したい場合
+```python
+for mit in attack.mitigation_list:
+    if mit.id == "M1013":
+        for concrete_mit in mit.concrete_mitigation_list:
+            print(concrete_mit.description)
 ```
 
-## 使い方
+### ATT&CK 参考資料 オブジェクト
 
-### テンプレートとして使用する場合
+#### 外部参考資料 (AttackExternalReference)
+外部の論文やブログ記事などの参考資料を表すオブジェクトです。
 
-```bash
-# Gitリポジトリを初期化解除（必要に応じて）
-rm -rf .git
+##### 保有情報
+- reference_id(int) : 参考資料の一意なID
+- name(str) : 引用名 (例 "Microsoft Local Accounts Feb 2019")
+- url(str) : 参考資料のURL
+- description(str) : 引用の詳細情報
 
-# 新しいリポジトリとして初期化
-git init
+#### 内部参考資料 (AttackInternalReference)
+ATT&CK内の他のテクニックへの参照を表すオブジェクトです。
+
+##### 保有情報
+- mitre_id(str) : 参照先のテクニックID (例 "T1552.004")
+- url(str) : 参照先のURL
+
+### 各種検索
+
+5種類の検索関数を使用することができます。
+
+#### テクニックid検索
+idを元にテクニックを検索することができます。(idが存在しない場合はValueErrorをraiseします)
+```python
+tec = attack.get_technique_by_id(technique_id="T1059.001")
+print("検索結果", tec.id)
 ```
 
-### コード品質チェック
-
-```bash
-# リンティングの実行
-ruff check .
-
-# 自動修正
-ruff check --fix .
-
-# フォーマット
-ruff format .
+#### タクティック名検索
+タクティック名を元にタクティックオブジェクトを検索することができます。(名前が存在しない場合はValueErrorをraiseします)
+```python
+tac = attack.get_tactic_by_name(tactic_name="Initial Access")
+print("検索結果", tac.id)
 ```
 
-## プロジェクト構造
-
+#### クエリからのテクニックベクトル検索
+記述に類似する内容からベクトル検索を行うことができます。
+- query引数: 自由記述のクエリを入力できます。
+- top_k引数: 上位何件を取得するかを選択できます。
+- filter引数: 子テクニックのみ・親テクニックのみ・両方(全テクニック) の3種類から選択できます。
+```python
+test_query = "Please search techniques about credential dumping"
+searched_tec_list = attack.get_relevant_technique(query=test_query, top_k=5, filter="both")
+print("検索結果", [tec.id for tec in searched_tec_list])
 ```
-.
-├── .devcontainer/          # Dev Container設定
-├── .vscode/               # VS Code設定
-├── .gitignore            # Git除外設定
-├── pyproject.toml        # プロジェクト設定
-└── ReadMe.md            # このファイル
+
+#### 緩和策id検索
+idを元に抽象緩和策を検索することができます。(idが存在しない場合はValueErrorをraiseします)
+```python
+mit = attack.get_mitigation_by_id(mitigation_id="M1013")
+print("検索結果", mit.id)
 ```
 
-## 設定内容
-
-### Ruff設定
-
-- **選択ルール**: すべてのルールを有効化
-- **無視ルール**: 
-  - D: ドックストリング関連
-  - S: 安全規則関連
-  - PTH: pathlib推奨
-  - RET: 戻り値の最適化
-  - ASYNC: 非同期関連
-  - T201: printの制限
-  - RUF: カタカナの「ノ」の制約など
-- **行長制限**: 150文字
-- **自動修正除外**: 未使用importや行長制限
-
-### 依存関係
-
-- **Python**: 3.10以上
-- **基本依存**: numpy
-
-## カスタマイズ
-
-1. `pyproject.toml`のプロジェクト名を変更
-2. 必要な依存関係を`dependencies`に追加
-3. Ruffの設定を必要に応じて調整
-4. `.gitignore`にプロジェクト固有の除外項目を追加
-
-## 開発フロー
-
-1. 仮想環境を有効化
-2. コードを編集
-3. `ruff check .`でコード品質をチェック
-4. `ruff format .`でフォーマット
-5. テストを実行（テストフレームワークを追加した場合）
-6. コミット・プッシュ
+#### 外部参考資料名検索
+引用名を元に外部参考資料を検索することができます。(名前が存在しない場合はValueErrorをraiseします)
+```python
+ref = attack.get_external_reference_by_name(name="Microsoft Local Accounts Feb 2019")
+print("検索結果", ref.url)
+```
