@@ -9,7 +9,7 @@ include-package-data = true
 attack = ["data/**/*"]
 
 [tool.setuptools.packages.find]
-include = ["attack"]
+include = ["attack", "attack.config", "attack.entities"]
 
 [project]
 name = "attack"
