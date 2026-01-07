@@ -1,22 +1,19 @@
 import os
 import re
 import shutil
-from collections.abc import Iterator, Sequence
 from contextlib import suppress
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import Literal
 
 import chromadb
 import pandas as pd
-import yaml
 from chromadb.api.models.Collection import Collection
 from chromadb.errors import NotFoundError
 from chromadb.utils import embedding_functions
-from jedi.api.helpers import match
-from openai import OpenAI
 from platformdirs import user_data_dir
 
+from attack.config import settings
 from attack.entities import (
     AttackAbstractMitigation,
     AttackConcreteMitigation,
@@ -51,6 +48,15 @@ class Attack:
         self.tactic_list: list[AttackTactic] = self.__setup_tactic_list()
         self.mitigation_list: list[AttackAbstractMitigation] = self.__setup_mitigation_list()
         self.technique_list: list[AttackTechnique] = self.__setup_technique_list()
+
+        if not os.path.isdir(str(self.user_data_dir_path.joinpath("chroma"))):  # ユーザ側のバージョンディレクトリにDBが存在しない場合
+            print("ベクトルDBの設定がありません。初期化し作成します...")
+            initialize_vector = True  # 初期実行時なので初期化を行う
+        self.chroma_client = chromadb.PersistentClient(str(self.user_data_dir_path.joinpath("chroma")))
+        if initialize_vector:
+            # 初期化が選択されている or 指定バージョンのvector DBが存在しない場合
+            self.__initialize_vector(model=emb_model)
+        self.technique_chroma_collection: Collection = self.__get_technique_chroma_collection(model=emb_model)
 
     def __setup_external_reference_list(self) -> list[AttackExternalReference]:
         mitigation_df: pd.DataFrame = pd.read_excel(
@@ -159,6 +165,49 @@ class Attack:
                 self.__add_technique_to_tactic(tactic.name, tec)
         return technique_list
 
+    def __initialize_vector(self, model: Literal["text-embedding-3-small", "text-embedding-3-large"]) -> None:
+        try:
+            self.__initialize_technique_vector(model=model)  # テクニックのベクトルDBを初期化
+            print("ベクトルDBの初期化が完了しました。")  # 初期化完了のメッセージ
+        except Exception:
+            shutil.rmtree(str(self.user_data_dir_path.joinpath("chroma")))  # 初期化失敗時は変に残らないように削除
+            raise
+
+    def __initialize_technique_vector(self, model: Literal["text-embedding-3-small", "text-embedding-3-large"]) -> None:
+        # ベクトルdb(chroma)とavroファイルの両方を初期化する関数
+        # ベクトルavroファイルの初期化
+        id_list: list[str] = []
+        desc_list: list[str] = []
+        metadata_list: list[dict[str, bool]] = []  # {"is_parent":bool}の形を保持した辞書
+        for tec in self.technique_list:
+            id_list.append(tec.id)
+            desc_list.append(tec.description)
+            metadata_list.append({"is_parent": not tec.have_parent})
+        # ベクトルDB(chroma)の初期化
+        with suppress(NotFoundError):
+            self.chroma_client.delete_collection(name="attack_technique")  # 存在する場合は一度削除してリセット
+        openai_ef = embedding_functions.OpenAIEmbeddingFunction(  # ベクトル化関数
+            api_key=settings.openai_api_key,
+            model_name=model,
+        )
+        collection: Collection = self.chroma_client.get_or_create_collection(
+            name="attack_technique",
+            metadata={"hnsw:space": "cosine"},
+            embedding_function=openai_ef,  # ty:ignore[invalid-argument-type]
+        )
+        collection.add(documents=desc_list, ids=id_list, metadatas=metadata_list)  # コレクションに追加  # ty:ignore[invalid-argument-type]
+
+    def __get_technique_chroma_collection(
+        self,
+        model: Literal["text-embedding-3-small", "text-embedding-3-large"],
+    ) -> Collection:  # chromaDBを起動する関数
+        openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=settings.openai_api_key,
+            model_name=model,
+        )
+        collection: Collection = self.chroma_client.get_collection(name="attack_technique", embedding_function=openai_ef)  # ty:ignore[invalid-argument-type]
+        return collection
+
     def __add_concrete_mitigation_to_aabstract_mitigation(
         self,
         abstract_mitigation_id: str,
@@ -207,19 +256,23 @@ class Attack:
 
     def __clean_description(self, desc: str) -> str:
         """
-        descから引用を内部引用ならば[InRef id: ***], 外部引用ならば[ExRef id: ***]などに変換する
+        descから引用を引用マーク([0], [1]など)に順番に変換する
+        同じ引用には同じ番号を割り当てる
         """
         external_pattern = r"\(Citation: .*?\)"
         internal_pattern = r"\[.*?\]\(https://attack.mitre.org/.*?\)"
         combined_pattern = f"{external_pattern}|{internal_pattern}"
 
+        ref_to_number: dict[str, int] = {}  # 引用文字列 -> 番号のマッピング
         counter = 0
 
-        def replace_with_counter(match: re.Match[str]) -> str:  # noqa: ARG001
+        def replace_with_counter(match: re.Match[str]) -> str:
             nonlocal counter
-            result = f"[{counter}]"
-            counter += 1
-            return result
+            matched_text = match.group()
+            if matched_text not in ref_to_number:
+                ref_to_number[matched_text] = counter
+                counter += 1
+            return f"[{ref_to_number[matched_text]}]"
 
         result: str = re.sub(combined_pattern, replace_with_counter, desc)
         return result
@@ -318,3 +371,30 @@ class Attack:
                 return tec
         err_msg = f"technique_id: {technique_id} は存在しません"
         raise ValueError(err_msg)
+
+    def get_relevant_technique(
+        self,
+        query: str,
+        top_k: int,
+        *,
+        filter: Literal["parent", "child", "both"] = "both",  # noqa: A002
+    ) -> list[AttackTechnique]:
+        """
+        クエリを元にベクトルDBを検索する関数
+
+        Args:
+            query (str): 検索文言
+            top_k (int): 上位何件を取得するか
+            filter (str): 親のみ, 子のみ, 両方 の3種類でフィルターをかける
+
+        Returns:
+            list[AttackTechnique]: top_kで指定された個数分上位の結果をテクニックオブジェクト
+        """
+        if filter == "parent":
+            result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k, where={"is_parent": True})
+        elif filter == "child":
+            result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k, where={"is_parent": False})
+        elif filter == "both":
+            result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k)
+        ret: list[AttackTechnique] = [self.get_technique_by_id(technique_id=tec_id) for tec_id in result["ids"][0]]
+        return ret
