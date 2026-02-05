@@ -10,6 +10,7 @@ attack = ["data/**/*"]
 
 [tool.setuptools.packages.find]
 include = ["attack", "attack.config", "attack.entities"]
+exclude = ["attack.data*"]
 
 [project]
 name = "attack"
