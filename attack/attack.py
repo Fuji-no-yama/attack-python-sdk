@@ -34,11 +34,25 @@ class Attack:
     def __init__(
         self,
         *,  # 以下をキーワード引数に
-        domain: Literal["enterprise", "mobile", "ics"] = "enterprise",
-        version: Literal["17.1", "18.1"] = "18.1",
+        domain: str = "enterprise",
+        version: str = "18.1",
         emb_model: Literal["text-embedding-3-small", "text-embedding-3-large"] = "text-embedding-3-large",
         initialize_vector: bool = False,
     ) -> None:
+        """
+        Args:
+            domain (str): ATT&CKドメイン ("enterprise", "mobile", "ics"のいずれか) defaultはenterprise
+            version (str): ATTACKデータバージョン ("17.1", "18.1"のいずれか) defaultは18.1
+            emb_model (str): ベクトル化に使用するモデル
+            initialize_vector (bool): ベクトルDBを初期化するかどうか(デフォルトはFalse。TrueにするとベクトルDBを再構築する)
+        """  # noqa: E501
+        available_versions: list[str] = self.get_available_versions()
+        if version not in available_versions:
+            err_msg = f"version must be one of {available_versions}. '{version}' is given."  # noqa: E501
+            raise ValueError(err_msg)
+        if domain not in ["enterprise", "mobile", "ics"]:
+            err_msg = "domain must be one of ['enterprise', 'mobile', 'ics']."  # noqa: E501
+            raise ValueError(err_msg)
         self.domain: Literal["enterprise", "mobile", "ics"] = domain
         self.version = f"v{version}"  # ディレクトリ名はv17.1のような形式であるため、バージョンをv{version}の形式に変換
         self.data_dir_path = files("attack.data").joinpath(f"{self.version}")  # パッケージ内のdataディレクトリ
@@ -49,14 +63,15 @@ class Attack:
         self.mitigation_list: list[AttackAbstractMitigation] = self.__setup_mitigation_list()
         self.technique_list: list[AttackTechnique] = self.__setup_technique_list()
 
-        if not os.path.isdir(str(self.user_data_dir_path.joinpath("chroma"))):  # ユーザ側のバージョンディレクトリにDBが存在しない場合
-            print("ベクトルDBの設定がありません。初期化し作成します...")
-            initialize_vector = True  # 初期実行時なので初期化を行う
-        self.chroma_client = chromadb.PersistentClient(str(self.user_data_dir_path.joinpath("chroma")))
-        if initialize_vector:
-            # 初期化が選択されている or 指定バージョンのvector DBが存在しない場合
-            self.__initialize_vector(model=emb_model)
-        self.technique_chroma_collection: Collection = self.__get_technique_chroma_collection(model=emb_model)
+        if not settings.attack_test_flag:
+            if not os.path.isdir(str(self.user_data_dir_path.joinpath("chroma"))):  # ユーザ側のバージョンディレクトリにDBが存在しない場合
+                print("ベクトルDBの設定がありません。初期化し作成します...")
+                initialize_vector = True  # 初期実行時なので初期化を行う
+            self.chroma_client = chromadb.PersistentClient(str(self.user_data_dir_path.joinpath("chroma")))
+            if initialize_vector:
+                # 初期化が選択されている or 指定バージョンのvector DBが存在しない場合
+                self.__initialize_vector(model=emb_model)
+            self.technique_chroma_collection: Collection = self.__get_technique_chroma_collection(model=emb_model)
 
     def __setup_external_reference_list(self) -> list[AttackExternalReference]:
         mitigation_df: pd.DataFrame = pd.read_excel(
@@ -390,6 +405,9 @@ class Attack:
         Returns:
             list[AttackTechnique]: top_kで指定された個数分上位の結果をテクニックオブジェクト
         """
+        if settings.attack_test_flag:
+            err_msg = "テストモードのため、ベクトルDB検索は無効化されています。"
+            raise ValueError(err_msg)
         if filter == "parent":
             result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k, where={"is_parent": True})
         elif filter == "child":
@@ -398,3 +416,17 @@ class Attack:
             result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k)
         ret: list[AttackTechnique] = [self.get_technique_by_id(technique_id=tec_id) for tec_id in result["ids"][0]]
         return ret
+
+    def get_available_versions(self) -> list[str]:
+        """
+        利用可能なATLASのバージョン一覧を取得する関数
+
+        Returns:
+            list[str]: 利用可能なATTACKのバージョン一覧
+        """
+        versions: list[str] = []
+        for p in files("attack.data").iterdir():
+            if re.match(r"v\d\d\.\d", p.name):
+                version = p.name.lstrip("v")
+                versions.append(version)
+        return sorted(versions)
