@@ -36,7 +36,7 @@ def attack_enterprise_v18() -> Attack:
 
 
 class TestCheckEnvironment:
-    def check_test_mode(self) -> None:
+    def test_check_mode(self) -> None:
         """テストモードであることを確認"""
         if os.getenv("ATTACK_TEST_MODE") == "False":
             pytest.exit("ATTACK_TEST_MODE 環境変数が設定されていません。テストモードで実行してください。")
