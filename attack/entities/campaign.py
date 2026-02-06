@@ -3,35 +3,24 @@ from typing import TYPE_CHECKING, Literal
 from .reference import AttackExternalReference, AttackInternalReference
 
 if TYPE_CHECKING:
-    from .campaign import AttackProcedure
-    from .mitigation import AttackConcreteMitigation
-    from .tactic import AttackTactic
+    from .procedure import AttackProcedure
 
 
-class AttackTechnique:
-    def __init__(  # noqa: PLR0913 (引数総数警告)
+class AttackCampaign:
+    def __init__(
         self,
         name: str,
-        technique_id: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        campaign_id: str,
         description: str,
-        *,
-        mitigation_list: list["AttackConcreteMitigation"] | None = None,
-        procedure_list: list["AttackProcedure"] | None = None,
-        have_parent: bool = False,
-        parent_id: str | None = None,
-        tactics: list["AttackTactic"],
+        domain: Literal["enterprise", "mobile", "ics"],
+        procedure_list: list["AttackProcedure"],
         reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.name: str = name
-        self.id: str = technique_id
+        self.id: str = campaign_id
         self.domain: Literal["enterprise", "mobile", "ics"] = domain
         self.description: str = description  # リンク系統を清掃する
-        self.mitigation_list: list[AttackConcreteMitigation] = mitigation_list if mitigation_list is not None else []
-        self.procedure_list: list[AttackProcedure] = procedure_list if procedure_list is not None else []
-        self.have_parent: bool = have_parent
-        self.parent_id: str | None = parent_id
-        self.tactics: list[AttackTactic] = tactics
+        self.procedure_list: list[AttackProcedure] = procedure_list
         self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list
 
     def get_description_include_references(self) -> str:
