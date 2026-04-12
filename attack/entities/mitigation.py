@@ -1,4 +1,3 @@
-from typing import Literal
 
 from .reference import AttackExternalReference, AttackInternalReference
 
@@ -9,13 +8,13 @@ class AttackAbstractMitigation:  # 1つの抽象緩和策を表すクラス(具�
         name: str,
         mitigation_id: str,
         description: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        domain: str,
         concrete_mitigation_list: list["AttackConcreteMitigation"],
         reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.name: str = name
         self.id: str = mitigation_id
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain: str = domain
         self.description: str = description  # リンク系統を清掃する
         self.concrete_mitigation_list: list[AttackConcreteMitigation] = concrete_mitigation_list
         self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list
@@ -43,13 +42,13 @@ class AttackConcreteMitigation:  # 1つの具体緩和策を表すクラス
         abstract_mitigation_name: str,
         technique_id: str,
         description: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        domain: str,
         reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.abstract_mitigation_id: str = abstract_mitigation_id
         self.abstract_mitigation_name: str = abstract_mitigation_name
         self.technique_id: str = technique_id
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain: str = domain
         self.description: str = description  # リンク系統を清掃する
         self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list
 

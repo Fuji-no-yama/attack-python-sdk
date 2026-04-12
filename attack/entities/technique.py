@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from .reference import AttackExternalReference, AttackInternalReference
 
@@ -13,7 +13,7 @@ class AttackTechnique:
         self,
         name: str,
         technique_id: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        domain: str,
         description: str,
         *,
         mitigation_list: list["AttackConcreteMitigation"] | None = None,
@@ -25,7 +25,7 @@ class AttackTechnique:
     ) -> None:
         self.name: str = name
         self.id: str = technique_id
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain: str = domain
         self.description: str = description  # リンク系統を清掃する
         self.mitigation_list: list[AttackConcreteMitigation] = mitigation_list if mitigation_list is not None else []
         self.procedure_list: list[AttackProcedure] = procedure_list if procedure_list is not None else []

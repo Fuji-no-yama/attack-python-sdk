@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from .reference import AttackExternalReference, AttackInternalReference
 
@@ -12,13 +12,13 @@ class AttackSoftware:
         name: str,
         software_id: str,
         description: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        domain: str,
         procedure_list: list["AttackProcedure"],
         reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.name: str = name
         self.id: str = software_id
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain: str = domain
         self.description: str = description  # リンク系統を清掃する
         self.procedure_list: list[AttackProcedure] = procedure_list
         self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list

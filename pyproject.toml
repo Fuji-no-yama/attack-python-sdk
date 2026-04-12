@@ -1,16 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.package-data]
-attack = ["data/**/*"]
-
-[tool.setuptools.packages.find]
-include = ["attack", "attack.config", "attack.entities"]
-exclude = ["attack.data*"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "attack"
@@ -24,19 +14,32 @@ authors = [
 ]
 dependencies = [
   "chromadb",
-  "ipykernel>=7.1.0",
   "openai>=0.8.0",
   "openpyxl>=3.1.5",
   "pandas>=2.3.3",
   "platformdirs>=4.3.7",
   "pydantic-settings>=2.12.0",
-  "pytest>=9.0.2",
+  "python-dotenv",
+  "tqdm",
 ]
 
 [project.urls]
 Homepage = "https://github.com/Fuji-no-yama/attack-python-sdk"
 
+[tool.hatch.build.targets.wheel]
+packages = ["attack"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
+]
+
 [tool.ruff]
+line-length = 150
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = ["D", "S", "PTH", "RET", "ASYNC", "T201", "RUF", "PLR0913"]
 # D: ドックストリング関連
@@ -50,4 +53,12 @@ ignore = ["D", "S", "PTH", "RET", "ASYNC", "T201", "RUF", "PLR0913"]
 
 # 自動修正から除外したいルールを指定
 unfixable = ["F401", "E501"] # 例: 未使用importや行長制限など
-line-length = 150
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["INP001", "PLR2004"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: tests that require external API keys (OpenAI)",
+]
