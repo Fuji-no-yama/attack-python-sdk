@@ -6,7 +6,6 @@
         "vscode": {
             "extensions": [
                 "ms-python.python",
-                "ms-toolsai.jupyter",
                 "mhutchie.git-graph",
                 "ms-azuretools.vscode-docker",
                 "ms-vscode-remote.remote-ssh",
@@ -25,5 +24,6 @@
             }
         }
     },
-    "postCreateCommand": "uv venv --clear && uv sync"
+    "initializeCommand": "mkdir -p ~/.codex ~/.claude && touch ~/.claude.json",
+    "postCreateCommand": "bash .devcontainer/postCreate.sh"
 }
