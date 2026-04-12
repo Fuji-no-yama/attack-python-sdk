@@ -1,16 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.package-data]
-attack = ["data/**/*"]
-
-[tool.setuptools.packages.find]
-include = ["attack", "attack.config", "attack.entities"]
-exclude = ["attack.data*"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "attack"
@@ -35,6 +25,9 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/Fuji-no-yama/attack-python-sdk"
+
+[tool.hatch.build.targets.wheel]
+packages = ["attack"]
 
 [dependency-groups]
 dev = [
