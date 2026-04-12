@@ -15,10 +15,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    env:
-      ATTACK_TEST_FLAG: ${{ secrets.ATTACK_TEST_FLAG }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -32,30 +29,30 @@ jobs:
       - name: Merge specific files from dev (locally)
         run: |
           git checkout dev -- attack/
-          git checkout dev -- ReadMe.md
+          git checkout dev -- README.md
           git checkout dev -- pyproject.toml
           git checkout dev -- .github/workflows/
-          git checkout dev -- test/
-      
+          git checkout dev -- tests/
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Build package
         run: |
           python -m pip install --upgrade pip build
           python -m build
-      
+
       - name: Test installation from built package
         run: |
           pip install pytest
           pip install dist/*.whl
           mkdir -p /tmp/attack-test
-          cp -r test /tmp/attack-test/
+          cp -r tests /tmp/attack-test/
           rm -rf attack/
           cd /tmp/attack-test
-          python -m pytest test/ -v
+          python -m pytest -m "not integration" -v
 
   merge:
     needs: test
@@ -79,7 +76,7 @@ jobs:
       - name: Merge specific files from dev
         run: |
           git checkout dev -- attack/
-          git checkout dev -- ReadMe.md
+          git checkout dev -- README.md
           git checkout dev -- pyproject.toml
           git checkout dev -- .github/workflows/
       
@@ -87,14 +84,14 @@ jobs:
         if: github.event.inputs.version != ''
         run: |
           # @の後のバージョンタグを更新 (例: @1.0.1 -> @v1.2.0)
-          sed -i "s|@[v0-9.]*|@${{ github.event.inputs.version }}|g" ReadMe.md
+          sed -i "s|@[v0-9.]*|@${{ github.event.inputs.version }}|g" README.md
           # --tag の後のバージョンタグを更新 (例: --tag 1.0.1 -> --tag v1.2.0 または 1.2.0)
           VERSION_WITHOUT_V=$(echo "${{ github.event.inputs.version }}" | sed 's/^v//')
-          sed -i "s|--tag [v0-9.]*|--tag ${VERSION_WITHOUT_V}|g" ReadMe.md
+          sed -i "s|--tag [v0-9.]*|--tag ${VERSION_WITHOUT_V}|g" README.md
       
       - name: Commit and push to main
         run: |
-          git add attack/ ReadMe.md pyproject.toml .github/workflows/
+          git add attack/ README.md pyproject.toml .github/workflows/
           git commit -m "Merge library files from dev for release ${{ github.event.inputs.version || 'update' }}" || echo "No changes to commit"
           git push origin main
       
