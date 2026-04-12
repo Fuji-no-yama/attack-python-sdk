@@ -32,7 +32,7 @@ jobs:
       - name: Merge specific files from dev (locally)
         run: |
           git checkout dev -- attack/
-          git checkout dev -- ReadMe.md
+          git checkout dev -- README.md
           git checkout dev -- pyproject.toml
           git checkout dev -- .github/workflows/
           git checkout dev -- test/
@@ -79,7 +79,7 @@ jobs:
       - name: Merge specific files from dev
         run: |
           git checkout dev -- attack/
-          git checkout dev -- ReadMe.md
+          git checkout dev -- README.md
           git checkout dev -- pyproject.toml
           git checkout dev -- .github/workflows/
       
@@ -87,14 +87,14 @@ jobs:
         if: github.event.inputs.version != ''
         run: |
           # @の後のバージョンタグを更新 (例: @1.0.1 -> @v1.2.0)
-          sed -i "s|@[v0-9.]*|@${{ github.event.inputs.version }}|g" ReadMe.md
+          sed -i "s|@[v0-9.]*|@${{ github.event.inputs.version }}|g" README.md
           # --tag の後のバージョンタグを更新 (例: --tag 1.0.1 -> --tag v1.2.0 または 1.2.0)
           VERSION_WITHOUT_V=$(echo "${{ github.event.inputs.version }}" | sed 's/^v//')
-          sed -i "s|--tag [v0-9.]*|--tag ${VERSION_WITHOUT_V}|g" ReadMe.md
+          sed -i "s|--tag [v0-9.]*|--tag ${VERSION_WITHOUT_V}|g" README.md
       
       - name: Commit and push to main
         run: |
-          git add attack/ ReadMe.md pyproject.toml .github/workflows/
+          git add attack/ README.md pyproject.toml .github/workflows/
           git commit -m "Merge library files from dev for release ${{ github.event.inputs.version || 'update' }}" || echo "No changes to commit"
           git push origin main
       
