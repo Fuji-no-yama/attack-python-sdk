@@ -24,13 +24,13 @@ authors = [
 ]
 dependencies = [
   "chromadb",
-  "ipykernel>=7.1.0",
   "openai>=0.8.0",
   "openpyxl>=3.1.5",
   "pandas>=2.3.3",
   "platformdirs>=4.3.7",
   "pydantic-settings>=2.12.0",
-  "pytest>=9.0.2",
+  "python-dotenv",
+  "tqdm",
 ]
 
 [project.urls]
@@ -38,6 +38,7 @@ Homepage = "https://github.com/Fuji-no-yama/attack-python-sdk"
 
 [dependency-groups]
 dev = [
+    "pytest>=9.0.2",
     "ruff>=0.15.10",
     "ty>=0.0.29",
 ]
@@ -59,3 +60,12 @@ ignore = ["D", "S", "PTH", "RET", "ASYNC", "T201", "RUF", "PLR0913"]
 
 # 自動修正から除外したいルールを指定
 unfixable = ["F401", "E501"] # 例: 未使用importや行長制限など
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["INP001", "PLR2004"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: tests that require external API keys (OpenAI)",
+]

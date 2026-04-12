@@ -19,7 +19,6 @@ class Settings(BaseSettings):
         alias="ATTACK_AVAILABLE_VERSIONS",
     )
     latest_version: str = Field("18.1", alias="ATTACK_LATEST_VERSION")
-    attack_test_flag: bool = Field(default=False, alias="ATTACK_TEST_FLAG")
 
     # .env > init kwargs > OS env の優先順位を維持
     @classmethod

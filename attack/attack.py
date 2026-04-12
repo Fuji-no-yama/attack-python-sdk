@@ -31,7 +31,7 @@ from attack.entities import (
 
 class Attack:
     version: str
-    domain: Literal["enterprise", "mobile", "ics"]
+    domain: str
     technique_list: list[AttackTechnique]
     tactic_list: list[AttackTactic]
     mitigation_list: list[AttackAbstractMitigation]
@@ -59,7 +59,7 @@ class Attack:
             err_msg = "domain must be one of ['enterprise', 'mobile', 'ics']."  # noqa: E501
             raise ValueError(err_msg)
         self.procedure_count = 0
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain = domain
         self.version = f"v{version}"  # ディレクトリ名はv17.1のような形式であるため、バージョンをv{version}の形式に変換
         self.data_dir_path = files("attack.data").joinpath(f"{self.version}")  # パッケージ内のdataディレクトリ
         self.user_data_dir_path: Path = Path(user_data_dir("attack")) / self.version  # ユーザ側dataディレクトリ
@@ -72,7 +72,7 @@ class Attack:
         self.software_list: list[AttackSoftware] = self.__setup_software_list()
         self.technique_list: list[AttackTechnique] = self.__setup_technique_list()
 
-        if not settings.attack_test_flag:
+        if settings.openai_api_key:
             if not os.path.isdir(str(self.user_data_dir_path.joinpath("chroma"))):  # ユーザ側のバージョンディレクトリにDBが存在しない場合
                 print("ベクトルDBの設定がありません。初期化し作成します...")
                 initialize_vector = True  # 初期実行時なので初期化を行う
@@ -297,8 +297,8 @@ class Attack:
             tec_id: str = row["ID"]
             tactic_list: list[AttackTactic] = [self.get_tactic_by_name(n) for n in row["tactics"].split(", ")]
             parent_id: str | None = (
-                re.findall(r"(T\d{4}).\d{4}", tec_id)[0] if re.search(r"T\d{4}.\d{4}", tec_id) else None
-            )  # テクニックIDがTで始まる場合
+                re.findall(r"(T\d{4})\.\d{3}", tec_id)[0] if re.search(r"T\d{4}\.\d{3}", tec_id) else None
+            )  # サブテクニック(例: T1548.002)の場合、親ID(例: T1548)を抽出
             tec = AttackTechnique(
                 name=row["name"],
                 technique_id=tec_id,
@@ -724,8 +724,8 @@ class Attack:
         Returns:
             list[AttackTechnique]: top_kで指定された個数分上位の結果をテクニックオブジェクト
         """
-        if settings.attack_test_flag:
-            err_msg = "テストモードのため、ベクトルDB検索は無効化されています。"
+        if not settings.openai_api_key:
+            err_msg = "OPENAI_API_KEYが設定されていないため、ベクトルDB検索は無効化されています。"
             raise ValueError(err_msg)
         if filter == "parent":
             result = self.technique_chroma_collection.query(query_texts=[query], n_results=top_k, where={"is_parent": True})
@@ -753,8 +753,8 @@ class Attack:
         Returns:
             list[AttackProcedure]: top_kで指定された個数分上位の結果をプロシージャオブジェクト
         """
-        if settings.attack_test_flag:
-            err_msg = "テストモードのため、ベクトルDB検索は無効化されています。"
+        if not settings.openai_api_key:
+            err_msg = "OPENAI_API_KEYが設定されていないため、ベクトルDB検索は無効化されています。"
             raise ValueError(err_msg)
         result = self.procedure_chroma_collection.query(query_texts=[query], n_results=top_k, where={"parent": filter} if filter != "all" else None)
         ret: list[AttackProcedure] = [self.get_procedure_by_id(procedure_id=proc_id) for proc_id in result["ids"][0]]

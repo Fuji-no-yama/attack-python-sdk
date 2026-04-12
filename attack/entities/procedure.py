@@ -1,4 +1,3 @@
-from typing import Literal
 
 from .reference import AttackExternalReference, AttackInternalReference
 
@@ -9,18 +8,18 @@ class AttackProcedure:
         original_id: str,
         parent_id: str,
         parent_name: str,
-        parent_type: Literal["campaign", "group", "software"],
+        parent_type: str,
         technique_id: str,
         description: str,
-        domain: Literal["enterprise", "mobile", "ics"],
+        domain: str,
         reference_list: list[AttackExternalReference | AttackInternalReference],
     ) -> None:
         self.original_id: str = original_id
         self.parent_id: str = parent_id
         self.parent_name: str = parent_name
-        self.parent_type: Literal["campaign", "group", "software"] = parent_type
+        self.parent_type: str = parent_type
         self.technique_id: str = technique_id
-        self.domain: Literal["enterprise", "mobile", "ics"] = domain
+        self.domain: str = domain
         self.description: str = description  # リンク系統を清掃する
         self.reference_list: list[AttackExternalReference | AttackInternalReference] = reference_list
 
