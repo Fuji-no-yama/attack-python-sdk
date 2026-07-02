@@ -3,12 +3,12 @@ MITRE ATT&CK についてPythonから気軽にデータを利用できるよう�
 
 # インストール方法
 ## pipの場合
-- インストール方法: `pip install git+https://github.com/Fuji-no-yama/attack-python-sdk@1.2.0`
-- アップグレード方法: `pip install -U git+https://github.com/Fuji-no-yama/attack-python-sdk@1.2.0`
+- インストール方法: `pip install git+https://github.com/Fuji-no-yama/attack-python-sdk@1.2.1`
+- アップグレード方法: `pip install -U git+https://github.com/Fuji-no-yama/attack-python-sdk@1.2.1`
 - 削除方法: `pip uninstall attack`
 
 ## uvの場合
-- インストール・アップグレード方法: `uv add git+https://github.com/Fuji-no-yama/attack-python-sdk --tag 1.2.0`
+- インストール・アップグレード方法: `uv add git+https://github.com/Fuji-no-yama/attack-python-sdk --tag 1.2.1`
 - 削除方法: `uv remove attack`
 
 # 使い方

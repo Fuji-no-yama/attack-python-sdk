@@ -34,12 +34,6 @@ jobs:
           git checkout dev -- .github/workflows/
           git checkout dev -- tests/
 
-      - name: Update package version for release test
-        if: github.event.inputs.version != ''
-        run: |
-          VERSION_WITHOUT_V=$(echo "${{ github.event.inputs.version }}" | sed 's/^v//')
-          sed -i "s|^version = \".*\"|version = \"${VERSION_WITHOUT_V}\"|" pyproject.toml
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -86,12 +80,12 @@ jobs:
           git checkout dev -- pyproject.toml
           git checkout dev -- .github/workflows/
       
-      - name: Update version in pyproject.toml and README
+      - name: Update version in README
         if: github.event.inputs.version != ''
         run: |
+          # パッケージバージョンはgit tagから動的に解決されるため(hatch-vcs)、
+          # pyproject.tomlの書き換えは不要。READMEのインストール例のみ更新する。
           VERSION_WITHOUT_V=$(echo "${{ github.event.inputs.version }}" | sed 's/^v//')
-          # pyproject.toml のパッケージバージョンを更新 (例: version = "1.0.1" -> version = "1.2.0")
-          sed -i "s|^version = \".*\"|version = \"${VERSION_WITHOUT_V}\"|" pyproject.toml
           # リポジトリURL(@の後)のバージョンタグを更新 (例: sdk@1.0.1 -> sdk@v1.2.0)
           # メールアドレス等の無関係な@を書き換えないようリポジトリ名でアンカーする
           sed -i "s|\(attack-python-sdk\)@[v0-9.]*|\1@${{ github.event.inputs.version }}|g" README.md
@@ -116,11 +110,11 @@ jobs:
             --notes "Release ${{ github.event.inputs.version }}" \
             --target main
 
-      - name: Sync release version files back to dev
+      - name: Sync release README back to dev
         if: github.event.inputs.version != ''
         run: |
           git checkout dev
-          git checkout main -- README.md pyproject.toml
-          git add README.md pyproject.toml
-          git commit -m "Sync release version ${{ github.event.inputs.version }} from main" || echo "No changes to commit"
+          git checkout main -- README.md
+          git add README.md
+          git commit -m "Sync release ${{ github.event.inputs.version }} README from main" || echo "No changes to commit"
           git push origin dev
