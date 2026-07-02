@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env.dev", env_file_encoding="utf-8")
     openai_api_key: str = Field("", alias="OPENAI_API_KEY")
     available_versions: list[str] = Field(
-        default_factory=lambda: ["17.1", "18.1"],
+        default_factory=lambda: ["17.1", "18.1", "19.0", "19.1"],
         alias="ATTACK_AVAILABLE_VERSIONS",
     )
-    latest_version: str = Field("18.1", alias="ATTACK_LATEST_VERSION")
+    latest_version: str = Field("19.1", alias="ATTACK_LATEST_VERSION")
 
     # .env > init kwargs > OS env の優先順位を維持
     @classmethod

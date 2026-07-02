@@ -40,14 +40,14 @@ class Attack:
         self,
         *,  # 以下をキーワード引数に
         domain: str = "enterprise",
-        version: str = "18.1",
+        version: str = "19.1",
         emb_model: Literal["text-embedding-3-small", "text-embedding-3-large"] = "text-embedding-3-large",
         initialize_vector: bool = False,
     ) -> None:
         """
         Args:
             domain (str): ATT&CKドメイン ("enterprise", "mobile", "ics"のいずれか) defaultはenterprise
-            version (str): ATTACKデータバージョン ("17.1", "18.1"のいずれか) defaultは18.1
+            version (str): ATTACKデータバージョン ("17.1", "18.1", "19.0", "19.1"のいずれか) defaultは19.1
             emb_model (str): ベクトル化に使用するモデル
             initialize_vector (bool): ベクトルDBを初期化するかどうか(デフォルトはFalse。TrueにするとベクトルDBを再構築する)
         """  # noqa: E501
@@ -442,7 +442,11 @@ class Attack:
         ref_list: list[str] = list(dict.fromkeys(re.findall(r"\(Citation: (.*?)\)|\[.*?\]\((https://attack.mitre.org/.*?)\)", desc)))
         for match_tuple in ref_list:
             if match_tuple[0] != "":  # 外部参照の場合
-                ref: AttackExternalReference = self.get_external_reference_by_name(match_tuple[0])
+                # 外部参照リストに存在しない引用名(ICSデータの "N/A" など)はスキップする
+                try:
+                    ref: AttackExternalReference = self.get_external_reference_by_name(match_tuple[0])
+                except ValueError:
+                    continue
                 ret_list.append(ref)
             elif match_tuple[1] != "":  # 内部参照の場合
                 id_match = re.search(r"([A-Z]+\d{4,6}.*)", match_tuple[1])
