@@ -40,14 +40,14 @@ class Attack:
         self,
         *,  # 以下をキーワード引数に
         domain: str = "enterprise",
-        version: str = "18.1",
+        version: str = "19.1",
         emb_model: Literal["text-embedding-3-small", "text-embedding-3-large"] = "text-embedding-3-large",
         initialize_vector: bool = False,
     ) -> None:
         """
         Args:
             domain (str): ATT&CKドメイン ("enterprise", "mobile", "ics"のいずれか) defaultはenterprise
-            version (str): ATTACKデータバージョン ("17.1", "18.1"のいずれか) defaultは18.1
+            version (str): ATTACKデータバージョン ("17.1", "18.1", "19.0", "19.1"のいずれか) defaultは19.1
             emb_model (str): ベクトル化に使用するモデル
             initialize_vector (bool): ベクトルDBを初期化するかどうか(デフォルトはFalse。TrueにするとベクトルDBを再構築する)
         """  # noqa: E501

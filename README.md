@@ -16,13 +16,13 @@ MITRE ATT&CK についてPythonから気軽にデータを利用できるよう�
 基本的なインスタンスの作成方法は以下のとおりです。(versionは指定しない場合は最新のものになります)
 ```python
 from attack import Attack
-attack = Attack(version="18.1", domain="enterprise")
+attack = Attack(version="19.1", domain="enterprise")
 ```
 初回実行時には自動でローカルにベクトルDBを作成します。ただし、その後にembeddingモデルを変えたい・もう一度ベクトルDBを初期化したいなどの場合には以下の方法で初期化を行えます。  
 (embedding modelはtext-embeddingのsmallとlargeを選択できます。)
 ```python
 from attack import Attack
-attack = Attack(version="18.1", domain="enterprise", emb_model="text-embedding-3-small", initialize_vector=True)
+attack = Attack(version="19.1", domain="enterprise", emb_model="text-embedding-3-small", initialize_vector=True)
 ```
 
 ## MITRE ATLAS SDKとの差分
