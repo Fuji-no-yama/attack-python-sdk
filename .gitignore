@@ -1,5 +1,6 @@
 # added content
 .venv
+.claude/
 tmp/*
 .DS_Store
 .env.dev
