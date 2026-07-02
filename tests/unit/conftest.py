@@ -33,6 +33,28 @@ def attack_enterprise_v18() -> Attack:
 
 
 @pytest.fixture(scope="module")
+def attack_mobile() -> Attack:
+    """Mobileドメインのアタックインスタンス(ベクトルDBなし)。"""
+    original = settings.openai_api_key
+    settings.openai_api_key = ""
+    try:
+        return Attack(domain="mobile")
+    finally:
+        settings.openai_api_key = original
+
+
+@pytest.fixture(scope="module")
+def attack_ics() -> Attack:
+    """ICSドメインのアタックインスタンス(ベクトルDBなし)。"""
+    original = settings.openai_api_key
+    settings.openai_api_key = ""
+    try:
+        return Attack(domain="ics")
+    finally:
+        settings.openai_api_key = original
+
+
+@pytest.fixture(scope="module")
 def all_versions() -> list[str]:
     """利用可能な全バージョンのリスト。"""
     original = settings.openai_api_key

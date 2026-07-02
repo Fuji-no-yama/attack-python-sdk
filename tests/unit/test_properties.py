@@ -247,3 +247,19 @@ class TestAllVersions:
     def test_invalid_domain_raises(self) -> None:
         with pytest.raises(ValueError, match="domain must be one of"):
             Attack(domain="invalid")
+
+
+class TestDomains:
+    """enterprise以外のドメイン(mobile, ics)が正常に読み込めることを確認する。"""
+
+    def test_mobile_domain_loadable(self, attack_mobile: Attack) -> None:
+        assert attack_mobile.domain == "mobile"
+        assert len(attack_mobile.technique_list) > 0
+        assert len(attack_mobile.tactic_list) > 0
+
+    def test_ics_domain_loadable(self, attack_ics: Attack) -> None:
+        # ICSデータには外部参照リストに存在しない引用名(N/A等)が含まれるため、
+        # 参照解決で例外を出さずに読み込めることの回帰テストを兼ねる
+        assert attack_ics.domain == "ics"
+        assert len(attack_ics.technique_list) > 0
+        assert len(attack_ics.tactic_list) > 0
